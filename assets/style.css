@@ -1,0 +1,196 @@
+:root {
+  --text: #1a1a1a;
+  --muted: #666;
+  --accent: #2b5797;
+  --rule: #e2e2e2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--text);
+  background: #fff;
+}
+
+.container {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 4rem;
+}
+
+/* Header / navigation */
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding: 2.25rem 0 1rem;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 2.5rem;
+}
+
+.site-name {
+  font-size: 1.25rem;
+  font-weight: normal;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.site-name a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+nav a {
+  color: var(--accent);
+  text-decoration: none;
+  margin-left: 1.5rem;
+  font-size: 1rem;
+}
+
+nav a:first-child {
+  margin-left: 0;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+nav a.current {
+  color: var(--text);
+  pointer-events: none;
+}
+
+/* General elements */
+
+a {
+  color: var(--accent);
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: normal;
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+  font-weight: normal;
+  margin: 2.5rem 0 1.25rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Home page */
+
+.intro {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.intro img {
+  width: 11rem;
+  max-width: 40vw;
+  height: auto;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.intro .affiliation {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Research section */
+
+#research {
+  margin-top: 3.5rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.paper {
+  margin-bottom: 2.25rem;
+}
+
+.paper-title {
+  font-size: 1.0625rem;
+  margin: 0 0 0.15rem;
+  font-weight: bold;
+}
+
+.paper-title a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.paper-title a:hover {
+  text-decoration: underline;
+}
+
+.paper-meta {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+.paper details {
+  margin-top: 0.35rem;
+}
+
+.paper summary {
+  cursor: pointer;
+  font-size: 0.9375rem;
+  color: var(--accent);
+  width: fit-content;
+}
+
+.paper summary:hover {
+  text-decoration: underline;
+}
+
+.paper details p {
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* Narrow screens */
+
+@media (max-width: 34rem) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  nav a {
+    margin-left: 0;
+    margin-right: 1.25rem;
+  }
+
+  .intro {
+    flex-direction: column;
+  }
+
+  .intro img {
+    max-width: 60vw;
+  }
+}
