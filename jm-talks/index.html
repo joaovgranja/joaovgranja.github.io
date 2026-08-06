@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>Job Market Talks — Sign-up</title>
+  <title>Applied Job Market Talks 2026-27 — Sign-up</title>
   <link rel="stylesheet" href="../assets/style.css">
   <style>
     .gate {
@@ -108,7 +108,7 @@
     <main>
       <!-- Password gate -->
       <div id="gate" class="gate">
-        <h1>Job Market Talks — Sign-up</h1>
+        <h1>Applied Job Market Talks 2026-27 — Sign-up</h1>
         <p class="muted">This page is password-protected. Please enter the password you were given.</p>
         <form id="gate-form">
           <label for="password">Password</label>
@@ -120,7 +120,7 @@
 
       <!-- Sign-up form -->
       <div id="signup" class="signup hidden">
-        <h1>Job Market Talks — Sign-up</h1>
+        <h1>Applied Job Market Talks 2026-27 — Sign-up</h1>
         <p>
           Please choose a slot for your talk below and enter your name and email.
           Slots that are shaded and struck through have already been taken.
@@ -174,6 +174,7 @@
           "Monday 2 November — Archaeology 612, 2:00–3:30pm",
           "Monday 16 November — Archaeology 612, 2:00–3:30pm",
           "Monday 23 November — Archaeology 612, 2:00–3:30pm",
+          "Monday 30 November — Archaeology 612, 2:00–3:30pm",
         ],
       },
     ];
@@ -268,6 +269,13 @@
       const msg = document.getElementById("signup-msg");
       const chosen = document.querySelector('input[name="slot"]:checked');
       if (!chosen) return;
+      const emailValue = document.getElementById("email").value.trim();
+      if (!emailValue.includes("@")) {
+        msg.textContent = "Please enter a valid email address (it must contain an @).";
+        msg.className = "msg error";
+        msg.classList.remove("hidden");
+        return;
+      }
       btn.disabled = true;
       btn.textContent = "Signing you up… this can take a few seconds";
       msg.classList.add("hidden");
