@@ -238,6 +238,7 @@
       const btn = document.getElementById("gate-btn");
       const msg = document.getElementById("gate-msg");
       btn.disabled = true;
+      btn.textContent = "Checking…";
       msg.classList.add("hidden");
       try {
         const data = await api({ action: "list" });
@@ -252,6 +253,7 @@
         msg.classList.remove("hidden");
       } finally {
         btn.disabled = false;
+        btn.textContent = "Enter";
       }
     }
 
@@ -267,32 +269,47 @@
       const chosen = document.querySelector('input[name="slot"]:checked');
       if (!chosen) return;
       btn.disabled = true;
+      btn.textContent = "Signing you up… this can take a few seconds";
       msg.classList.add("hidden");
-      try {
-        const data = await api({
-          action: "signup",
-          name: document.getElementById("name").value.trim(),
-          email: document.getElementById("email").value.trim(),
-          slot: chosen.value,
-        });
-        if (data.ok) {
-          document.getElementById("done-text").textContent =
-            "You are signed up for: " + chosen.value + ". " +
-            "If you need to change your slot, please email joao.granja@ucl.ac.uk.";
-          show("done");
-        } else if (data.error === "taken") {
-          renderSlots(data.booked || []);
-          msg.textContent = "Sorry — that slot was just taken by someone else. Please choose another.";
-          msg.className = "msg error";
-        } else {
-          throw new Error(data.error || "Unknown error");
-        }
-      } catch (err) {
-        msg.textContent = "Something went wrong. Please try again, or email joao.granja@ucl.ac.uk.";
-        msg.className = "msg error";
-      } finally {
-        btn.disabled = false;
+
+      // A unique token makes retries safe: if the browser fails to read the
+      // response, resending the same token lets the backend recognize the
+      // signup as already recorded rather than rejecting the slot as taken.
+      const token = (crypto.randomUUID && crypto.randomUUID()) ||
+        String(Math.random()).slice(2) + Date.now();
+      const payload = {
+        action: "signup",
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        slot: chosen.value,
+        token: token,
+      };
+
+      let data = null;
+      for (let attempt = 0; attempt < 3 && !data; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 1500));
+        try {
+          data = await api(payload);
+        } catch (err) { /* retry */ }
       }
+
+      if (data && data.ok) {
+        document.getElementById("done-text").textContent =
+          "You are signed up for: " + chosen.value + ". " +
+          "If you need to change your slot, please email joao.granja@ucl.ac.uk.";
+        show("done");
+      } else if (data && data.error === "taken") {
+        renderSlots(data.booked || []);
+        msg.textContent = "Sorry — that slot was just taken by someone else. Please choose another.";
+        msg.className = "msg error";
+      } else {
+        msg.textContent = "We could not confirm your sign-up due to a network problem — " +
+          "it may still have been recorded. Please email joao.granja@ucl.ac.uk to confirm " +
+          "your slot rather than signing up again.";
+        msg.className = "msg error";
+      }
+      btn.disabled = false;
+      btn.textContent = "Sign up";
     });
 
     // If a valid password is already in this browser session, skip the gate.
