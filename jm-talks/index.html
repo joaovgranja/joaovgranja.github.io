@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Job Market Talks — Sign-up</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .gate {
+      max-width: 26rem;
+      margin: 4rem auto 0;
+    }
+
+    .gate label,
+    .signup label {
+      display: block;
+      margin: 1rem 0 0.25rem;
+      font-size: 0.9375rem;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      font-family: inherit;
+      font-size: 1rem;
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    button {
+      margin-top: 1.25rem;
+      padding: 0.5rem 1.25rem;
+      font-family: inherit;
+      font-size: 1rem;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    button:hover { opacity: 0.92; }
+    button:disabled { background: var(--muted); cursor: default; }
+
+    .slot-group { margin-top: 1.75rem; }
+
+    .slot-group h3 {
+      font-size: 1.0625rem;
+      font-weight: bold;
+      margin: 0 0 0.25rem;
+    }
+
+    .slot-group p.where {
+      margin: 0 0 0.6rem;
+      font-size: 0.9375rem;
+      color: var(--muted);
+    }
+
+    .slot {
+      display: block;
+      padding: 0.45rem 0.7rem;
+      margin-bottom: 0.4rem;
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .slot:hover { border-color: var(--accent); }
+
+    .slot input { margin-right: 0.6rem; }
+
+    .slot.selected {
+      border-color: var(--accent);
+      background: #f2f6fc;
+    }
+
+    .slot.taken {
+      background: #eee;
+      color: var(--muted);
+      text-decoration: line-through;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .msg { margin-top: 1rem; font-size: 0.9375rem; }
+    .msg.error { color: #a33; }
+    .msg.ok { color: #2a7a2a; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <p class="site-name"><a href="../index.html">João Granja</a></p>
+    </header>
+
+    <main>
+      <!-- Password gate -->
+      <div id="gate" class="gate">
+        <h1>Job Market Talks — Sign-up</h1>
+        <p class="muted">This page is password-protected. Please enter the password you were given.</p>
+        <form id="gate-form">
+          <label for="password">Password</label>
+          <input type="password" id="password" autocomplete="off" required>
+          <button type="submit" id="gate-btn">Enter</button>
+          <p id="gate-msg" class="msg error hidden"></p>
+        </form>
+      </div>
+
+      <!-- Sign-up form -->
+      <div id="signup" class="signup hidden">
+        <h1>Job Market Talks — Sign-up</h1>
+        <p>
+          Please choose a slot for your talk below and enter your name and email.
+          Slots that are shaded and struck through have already been taken.
+        </p>
+
+        <form id="signup-form">
+          <label for="name">Name</label>
+          <input type="text" id="name" autocomplete="name" required>
+
+          <label for="email">Email</label>
+          <input type="email" id="email" autocomplete="email" required>
+
+          <div id="slot-list"></div>
+
+          <button type="submit" id="submit-btn">Sign up</button>
+          <p id="signup-msg" class="msg hidden"></p>
+        </form>
+      </div>
+
+      <!-- Confirmation -->
+      <div id="done" class="hidden">
+        <h1>Thank you!</h1>
+        <p id="done-text"></p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Paste the Google Apps Script web app URL between the quotes below.
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzn_ZijeKajyuBT_p_B3LQYYzrMcodehFvmumJ3k93bTpEB5Yi39s5F1oNC8q0cf_so/exec";
+
+    const SLOT_GROUPS = [
+      {
+        title: "Thursday seminars",
+        where: "IFS, 12:00–1:30pm",
+        slots: [
+          "Thursday 15 October — IFS, 12:00–1:30pm",
+          "Thursday 22 October — IFS, 12:00–1:30pm",
+          "Thursday 29 October — IFS, 12:00–1:30pm",
+          "Thursday 5 November — IFS, 12:00–1:30pm",
+          "Thursday 19 November — IFS, 12:00–1:30pm",
+        ],
+      },
+      {
+        title: "Monday seminars",
+        where: "Archaeology 612, 2:00–3:30pm",
+        slots: [
+          "Monday 12 October — Archaeology 612, 2:00–3:30pm",
+          "Monday 19 October — Archaeology 612, 2:00–3:30pm",
+          "Monday 26 October — Archaeology 612, 2:00–3:30pm",
+          "Monday 2 November — Archaeology 612, 2:00–3:30pm",
+          "Monday 16 November — Archaeology 612, 2:00–3:30pm",
+          "Monday 23 November — Archaeology 612, 2:00–3:30pm",
+        ],
+      },
+    ];
+
+    let password = sessionStorage.getItem("jm-talks-password") || "";
+
+    // Apps Script accepts cross-origin POSTs without a preflight when the
+    // body is sent as text/plain, so all requests go through this helper.
+    async function api(payload) {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(Object.assign({ password: password }, payload)),
+      });
+      if (!res.ok) throw new Error("Network error");
+      return res.json();
+    }
+
+    function show(id) {
+      for (const s of ["gate", "signup", "done"]) {
+        document.getElementById(s).classList.toggle("hidden", s !== id);
+      }
+    }
+
+    function renderSlots(booked) {
+      const container = document.getElementById("slot-list");
+      container.innerHTML = "";
+      for (const group of SLOT_GROUPS) {
+        const div = document.createElement("div");
+        div.className = "slot-group";
+        const h = document.createElement("h3");
+        h.textContent = group.title;
+        const where = document.createElement("p");
+        where.className = "where";
+        where.textContent = group.where;
+        div.appendChild(h);
+        div.appendChild(where);
+        for (const slot of group.slots) {
+          const taken = booked.includes(slot);
+          const label = document.createElement("label");
+          label.className = "slot" + (taken ? " taken" : "");
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "slot";
+          radio.value = slot;
+          radio.required = true;
+          radio.disabled = taken;
+          radio.addEventListener("change", () => {
+            container.querySelectorAll(".slot").forEach(el => el.classList.remove("selected"));
+            label.classList.add("selected");
+          });
+          label.appendChild(radio);
+          label.appendChild(document.createTextNode(slot.replace(/ — .*$/, "")));
+          div.appendChild(label);
+        }
+        container.appendChild(div);
+      }
+    }
+
+    async function enter(pw) {
+      password = pw;
+      const btn = document.getElementById("gate-btn");
+      const msg = document.getElementById("gate-msg");
+      btn.disabled = true;
+      msg.classList.add("hidden");
+      try {
+        const data = await api({ action: "list" });
+        if (!data.ok) throw new Error(data.error || "Wrong password");
+        sessionStorage.setItem("jm-talks-password", password);
+        renderSlots(data.booked);
+        show("signup");
+      } catch (err) {
+        sessionStorage.removeItem("jm-talks-password");
+        msg.textContent = err.message === "Wrong password" ? "Incorrect password." :
+          "Could not reach the sign-up service. Please try again.";
+        msg.classList.remove("hidden");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("gate-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      enter(document.getElementById("password").value.trim());
+    });
+
+    document.getElementById("signup-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("submit-btn");
+      const msg = document.getElementById("signup-msg");
+      const chosen = document.querySelector('input[name="slot"]:checked');
+      if (!chosen) return;
+      btn.disabled = true;
+      msg.classList.add("hidden");
+      try {
+        const data = await api({
+          action: "signup",
+          name: document.getElementById("name").value.trim(),
+          email: document.getElementById("email").value.trim(),
+          slot: chosen.value,
+        });
+        if (data.ok) {
+          document.getElementById("done-text").textContent =
+            "You are signed up for: " + chosen.value + ". " +
+            "If you need to change your slot, please email joao.granja@ucl.ac.uk.";
+          show("done");
+        } else if (data.error === "taken") {
+          renderSlots(data.booked || []);
+          msg.textContent = "Sorry — that slot was just taken by someone else. Please choose another.";
+          msg.className = "msg error";
+        } else {
+          throw new Error(data.error || "Unknown error");
+        }
+      } catch (err) {
+        msg.textContent = "Something went wrong. Please try again, or email joao.granja@ucl.ac.uk.";
+        msg.className = "msg error";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // If a valid password is already in this browser session, skip the gate.
+    if (password) enter(password);
+  </script>
+</body>
+</html>
